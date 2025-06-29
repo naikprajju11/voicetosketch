@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Voice to Sketch AI</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #d0eaff, #fce2ff);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 40px;
+      font-size: 36px;
+      color: #333;
+    }
+
+    select, button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      transition: 0.3s ease;
+    }
+
+    select {
+      background-color: #ffffff;
+      color: #333;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #444;
+    }
+
+    #result {
+      margin-top: 30px;
+      max-width: 80%;
+      border: 3px solid #222;
+      border-radius: 12px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    #downloadBtn {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 16px;
+      color: #007BFF;
+      text-decoration: none;
+    }
+
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 30px auto;
+      max-width: 1000px;
+    }
+
+    .gallery img {
+      max-width: 180px;
+      border-radius: 8px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h1>🎤 Voice to Sketch AI</h1>
+
+  <select id="style">
+    <option value="pencil sketch">Pencil Sketch</option>
+    <option value="color drawing">Color Drawing</option>
+    <option value="oil painting">Oil Painting</option>
+  </select>
+
+  <button onclick="start()">🎙️ Speak to Draw</button>
+
+  <p id="status">Say something like "draw a tiger in jungle"</p>
+  <img id="result" style="display:none" />
+  <br />
+  <a id="downloadBtn" style="display:none" download="sketch.png">📥 Download</a>
+
+  <h2 style="margin-top: 50px;">🖼️ Your Sketch Gallery</h2>
+  <div class="gallery" id="gallery"></div>
+
+  <script>
+    function enhancePrompt(base, style) {
+      const lower = base.toLowerCase();
+      if (lower.includes("animal")) base += " in realistic wildlife style";
+      if (lower.includes("space")) base += " with galaxy background";
+      return `${style} of ${base}`;
+    }
+
+    function start() {
+      const recog = new(window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recog.lang = "en-US";
+      recog.start();
+      document.getElementById("status").innerText = "🎧 Listening...";
+
+      recog.onresult = async function(e) {
+        const text = e.results[0][0].transcript;
+        const style = document.getElementById("style").value;
+        const finalPrompt = enhancePrompt(text, style);
+
+        document.getElementById("status").innerText = `🎨 Drawing: "${finalPrompt}"...`;
+
+        const res = await fetch("/draw", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: finalPrompt })
+        });
+
+        const data = await res.json();
+        if (data.status === "ok") {
+          const img = document.getElementById("result");
+          img.src = data.image;
+          img.style.display = "block";
+
+          // download link
+          const link = document.getElementById("downloadBtn");
+          link.href = data.image;
+          link.style.display = "inline-block";
+
+          // Add to gallery
+          const gallery = document.getElementById("gallery");
+          const thumb = document.createElement("img");
+          thumb.src = data.image;
+          gallery.prepend(thumb);
+
+          document.getElementById("status").innerText = "✅ Done!";
+        } else {
+          document.getElementById("status").innerText = "❌ " + data.message;
+        }
+      };
+
+      recog.onerror = function(err) {
+        document.getElementById("status").innerText = "🎤 Error: " + err.error;
+      };
+    }
+  </script>
+</body>
+</html>

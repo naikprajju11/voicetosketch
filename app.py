@@ -5,7 +5,7 @@ import base64
 app = Flask(__name__)
 
 # ✅ Replace with your Hugging Face token
-HUGGINGFACE_API_TOKEN = "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"
+HUGGINGFACE_API_TOKEN = "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"
 API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
 
 headers = {

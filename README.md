@@ -1,5 +1,3 @@
----
-
 # 🎤 Voice to Sketch AI
 
 > Speak your imagination — and let AI turn it into art.
